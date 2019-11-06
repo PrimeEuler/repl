@@ -1,0 +1,16 @@
+{
+  "name": "@primeeuler/repl",
+  "description": "JavaScript Read Evil Print Loop.",
+  "author": "Jeremy Ebert",
+  "version": "0.0.1",
+  "dependencies": { 
+      "@primeeuler/lineman": "^0.0.1"
+      
+  },
+    "repository": {
+    "type": "git",
+    "url": "https://github.com/PrimeEuler/repl.git"
+   },
+   "keywords": [ "interpreter", "repl", "shell", "cli","interface", "text" ],
+   "license": "MIT"
+}
