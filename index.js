@@ -21,15 +21,19 @@ function repl(){
         ldisc.READ  = function(text){
             ldisc.io.write(ldisc.echo(text))
         }
-        ldisc.evil  = function(text){
+        ldisc.evil      = function(text){
             var result
-            try{ result = eval( text ) }catch( e ){ result = e }
-            
+            function evalInScope(js, contextAsScope) {
+                //# Return the results of the in-line anonymous function we .call with the passed context
+                return function() { with(this) { return eval(js); }; }.call(contextAsScope);
+            }
+            try{ result = evalInScope( text, ldisc.context ) }catch( e ){ result = e }
             if( typeof result === "undefined" ){
                 ldisc.loop()
             }else{
                 ldisc.print( result ) 
             }
+            
         }
         ldisc.print = function(object){
             ldisc.io.write('\r\n' + inspect(object,false,10,true) + '\r\n')

@@ -33,20 +33,6 @@ var shell           = new repl()
                 })
                 
             },false) }
-    shell.evil      = function(text){
-        var result
-        function evalInScope(js, contextAsScope) {
-            //# Return the results of the in-line anonymous function we .call with the passed context
-            return function() { with(this) { return eval(js); }; }.call(contextAsScope);
-        }
-        try{ result = evalInScope( text, shell.context ) }catch( e ){ result = e }
-        if( typeof result === "undefined" ){
-            shell.loop()
-        }else{
-            shell.print( result ) 
-        }
-        
-    }
     
 //  terminal emulator process    
     if(process.stdin.isTTY){
