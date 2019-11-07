@@ -1,5 +1,6 @@
 //  dependencies
 var ansi    = require('ansi-escape-sequences');
+var opath   = require('./object-path');
 var inspect = require('util').inspect;
 var lineman = require('@primeeuler/lineman');
 
@@ -14,6 +15,7 @@ function repl(){
         ldisc.debug     = false
         ldisc.respond   = false;
         ldisc.request   = false;
+        ldisc.context   = {}
         
     
         ldisc.READ  = function(text){
@@ -101,6 +103,13 @@ function repl(){
         ldisc.kill  = function(){
             ldisc.end()
             ldisc.destroy()
+        }
+        ldisc.complete = function(){
+            var paths =  opath.getPaths(ldisc.context, ldisc.getText().buffer)
+                ldisc.setText( { buffer:paths.path, index:paths.path.length })
+                if(paths.siblings.length > 0){
+                    ldisc.print( paths.siblings )
+                }
         }
 
         
@@ -205,8 +214,9 @@ function repl(){
                 case 'end': 
                     break;
                 case 'tab':
-                    //ldisc.print(ldisc.getText())
-                    //ldisc.setText({ buffer:'tab', index:10})
+                    if(ldisc.request===false){
+                       ldisc.complete()
+                    }
                     break;
             }
                     
