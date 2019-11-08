@@ -1,6 +1,5 @@
 var repl            = require('../')
 var shell           = new repl()
-    shell.context   = shell
     shell.access    = { user:'', accept:false, failures:0 }
     shell.username  = function(text,callback){ return callback(true) }
     shell.password  = function(text,callback){ return callback(true) }
@@ -15,7 +14,9 @@ var shell           = new repl()
                                 if(accept){
                                     shell.user      = username
                                     shell.at        = '@'
-                                    shell.home      = 'sheldon' //global?'global':'window'
+                                    shell.home      = 'context' //global?'global':'window'
+                                    shell.context.global  = global
+                                    shell.context.shell   = shell
                                 }else if(shell.access.failures < 2){
                                     shell.access.failures ++
                                     shell.auth()
@@ -33,6 +34,33 @@ var shell           = new repl()
                 })
                 
             },false) }
+    /*
+    shell.evil  = function(text){
+            var result = shell.accessor.get(shell.context,text)
+            if(text.indexOf('=') > -1){
+                text = text.split('=')
+                result = JSON.parse(text[1].trim())
+                shell.accessor.set(shell.context, text[0].trim(), result )
+            }
+            
+            switch(typeof result){
+                case 'function':
+                    try{
+                        shell.print( result() ) 
+                    }catch(e){
+                        shell.print(e)
+                    }
+                    break;
+                case 'undefined':
+                    shell.loop()
+                    break;
+                default:
+                    shell.print( result ) 
+                
+            }
+            
+        }
+        */
     
 //  terminal emulator process    
     if(process.stdin.isTTY){

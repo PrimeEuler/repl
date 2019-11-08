@@ -341,8 +341,12 @@
                 //set path if leaf node
                 //only child
                 if( siblings.length === 1 ){
-                    nodes[n] = siblings.shift();
-                    path   = nodes.slice(0, n+1).join('.');
+                    if(siblings[0]!=='undefined'){
+                        nodes[n] = siblings.shift();
+                        path   = nodes.slice(0, n+1).join('.');
+                    }else{
+                        siblings.shift()
+                    }
                 }
             }
             return { path:path, siblings:siblings }

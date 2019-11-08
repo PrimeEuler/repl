@@ -1,6 +1,5 @@
 //  dependencies
 var ansi    = require('ansi-escape-sequences');
-var opath   = require('./object-path');
 var inspect = require('util').inspect;
 var lineman = require('@primeeuler/lineman');
 
@@ -16,12 +15,13 @@ function repl(){
         ldisc.respond   = false;
         ldisc.request   = false;
         ldisc.context   = {}
+        ldisc.accessor  = require('./object-path');
         
     
         ldisc.READ  = function(text){
             ldisc.io.write(ldisc.echo(text))
         }
-        ldisc.evil      = function(text){
+        ldisc.evil  = function(text){
             var result
             function evalInScope(js, contextAsScope) {
                 //# Return the results of the in-line anonymous function we .call with the passed context
@@ -108,8 +108,9 @@ function repl(){
             ldisc.end()
             ldisc.destroy()
         }
-        ldisc.complete = function(){
-            var paths =  opath.getPaths(ldisc.context, ldisc.getText().buffer)
+        ldisc.auto  = function(){
+            var paths =  ldisc.accessor.getPaths(ldisc.context, ldisc.getText().buffer)
+                ldisc.debug?ldisc.print(paths):null
                 ldisc.setText( { buffer:paths.path, index:paths.path.length })
                 if(paths.siblings.length > 0){
                     ldisc.print( paths.siblings )
@@ -219,7 +220,7 @@ function repl(){
                     break;
                 case 'tab':
                     if(ldisc.request===false){
-                       ldisc.complete()
+                       ldisc.auto()
                     }
                     break;
             }
