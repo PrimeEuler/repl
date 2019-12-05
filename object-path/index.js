@@ -290,6 +290,16 @@
             var defined     = false;
             var isNode      = false;
             var isLeaf      = false;
+            function props(obj) {
+                var p = [];
+                for (; obj != null; obj = Object.getPrototypeOf(obj)) {
+                    var op = Object.getOwnPropertyNames(obj);
+                    for (var i=0; i<op.length; i++)
+                        if (p.indexOf(op[i]) == -1)
+                             p.push(op[i]);
+                }
+                return p;
+            }
             function commonPrefix(candidates, index) {
                 var i, ch, memo
                 do {
@@ -311,7 +321,7 @@
             while(siblings.length === 0 && n < nodes.length){
                 n++;
                 path        = nodes.slice(0, n).join('.');
-                nested      = objectPath.get(obj, path,'DEFAULT_VAL');
+                nested      = objectPath.withInheritedProps.get(obj, path,'DEFAULT_VAL');
                 defined     = ( nested === 'DEFAULT_VAL' )? false : true;
                 nested      = nested || obj
                 //step back to parent node branch if subTree is undefined
@@ -319,7 +329,8 @@
                 //strings that start the same as current string (node[n])
                 if(typeof nested === 'object'){
                 //adjacency matches
-                    siblings    = Object.getOwnPropertyNames(nested).filter( startsWith )//node[n]
+                    //siblings    = Object.getOwnPropertyNames(nested).filter( startsWith )//node[n]
+                    siblings    = props( nested ).filter( startsWith )
                 }else{
                     siblings    = [];
                 }
