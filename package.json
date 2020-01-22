@@ -2,9 +2,9 @@
   "name": "@primeeuler/repl",
   "description": "JavaScript Read Evil Print Loop.",
   "author": "Jeremy Ebert",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "dependencies": { 
-      "@primeeuler/lineman": "^0.0.1",
+      "@primeeuler/lineman": "^0.0.2",
       "ansi-escape-sequences":"^5.0.0"
       
   },

@@ -4,6 +4,7 @@ var inspect = require('util').inspect;
 var lineman = require('@primeeuler/lineman');
 
 
+
 function repl(){
     var ldisc           = new lineman()
     var store           = [];
@@ -16,7 +17,10 @@ function repl(){
         ldisc.request   = false;
         ldisc.context   = {}
         ldisc.accessor  = require('./object-path');
-        
+        ldisc.io.cleanup = []
+        ldisc.io.on('newListener',function(event,listener){
+            //ldisc.io.cleanup.push([event,listener])
+        })
     
         ldisc.READ  = function(text){
             ldisc.io.write(ldisc.echo(text))
@@ -30,7 +34,12 @@ function repl(){
             try{ result = evalInScope( text, ldisc.context ) }catch( e ){ result = e }
             if( typeof result === "undefined" ){
                 ldisc.loop()
-            }else{
+            }else if(result == null){
+                ldisc.io.write('\n')
+                ldisc.loop()
+            }
+            
+            else{
                 ldisc.print( result ) 
             }
             
@@ -68,11 +77,11 @@ function repl(){
         //  ansi echo
             return  ansi.erase.inLine(2) + 
                     ansi.cursor.horizontalAbsolute(1) + 
-                    ansi.style.green +
+                    ansi.rgb(255,128,0) +
                     ldisc.user + 
                     ansi.style.cyan +
                     ldisc.at + 
-                    ansi.style.green +
+                    ansi.rgb(255,128,0) +
                     ldisc.home +
                     ansi.style.magenta +
                     ldisc.prompt + 
@@ -245,7 +254,7 @@ function repl(){
                 ldisc.respond( text.buffer )
             }else{
                 if(!text.buffer){
-                    ldisc.io.write('\n\r')
+                    ldisc.io.write('\n\r')//os.EOL
                     return
                 }
                 ldisc.evil( text.buffer )

@@ -1,39 +1,74 @@
-var repl            = require('../')
-var shell           = new repl()
-    shell.access    = { user:'', accept:false, failures:0 }
-    shell.username  = function(text,callback){ return callback(true) }
-    shell.password  = function(text,callback){ return callback(true) }
-    shell.auth      = function(){ 
-            shell.ask('username', function( username ){
-                shell.username(username, function(accept){
-                    shell.access.user = username
-                    if(accept){
-                        shell.ask('password', function( password ){
-                            shell.password(password, function(accept){
-                                shell.access.accept = accept
-                                if(accept){
-                                    shell.user      = username
-                                    shell.at        = '@'
-                                    shell.home      = 'context' //global?'global':'window'
-                                    shell.context.global  = global
-                                    shell.context.shell   = shell
-                                }else if(shell.access.failures < 2){
-                                    shell.access.failures ++
-                                    shell.auth()
-                                }else{
-                                    shell.kill()
-                                }
-                            })
-                        },true)    
-                    }else if(shell.access.failures < 2){
-                        ldisc.access.failures ++
-                        ldisc.auth()
-                    }else{
-                        ldisc.kill()
-                    }
+var repl        = require('../')
+var pty         = require('node-pty');
+var os          = require('os')
+var shell       = new repl()
+var username    = function(text,callback){ return callback(true) }
+var password    = function(text,callback){ return callback(true) }
+var login       = function(sh){ 
+        sh.access    = { user:'', accept:false, failures:0 }
+        sh.ask('username', function( user ){
+            username(user, function(accept){
+                sh.access.user = user
+                if(accept){
+                    sh.ask('password', function( pass ){
+                        password( pass , function(accept){
+                            sh.access.accept = accept
+                            if(accept){
+                                init( sh )
+                            }else if(sh.access.failures < 2){
+                                sh.access.failures ++
+                                login( sh )
+                            }else{
+                                sh.kill()
+                            }
+                        })
+                    },true)    
+                }else if(sh.access.failures < 2){
+                    sh.access.failures ++
+                    login( sh )
+                }else{
+                    sh.kill()
+                }
+            })
+            
+        },false) }
+var init        = function(sh){
+        sh.user      = sh.access.user // os.userInfo().username //username
+        sh.at        = '@'
+        sh.home      = os.hostname()
+        sh.context.global   = global
+        sh.context.shell    = sh
+        sh.context.os       = os
+        sh.context.exec     = function(){
+            var spawn       = pty.spawn.apply( null, arguments );
+            var resize      = function(size){ spawn.resize(size[0],size[1]) }
+                sh.isRaw = true
+                sh.io
+                    .pipe( spawn, { end:false } )
+                    .pipe( sh.io, { end:false } )
+                sh.on('resize',resize)
+                resize([sh.columns,sh.rows])
+                spawn.on('exit',function(){
+                    //cleanup pipe
+                    sh.io.removeAllListeners('unpipe')
+                    sh.io.removeAllListeners('drain')
+                    sh.io.removeAllListeners('error')
+                    sh.io.removeAllListeners('close')
+                    sh.io.removeAllListeners('finish')
+                    //cleanup terminal
+                    sh.removeListener('resize',resize)
+                    spawn.destroy()
+                    sh.isRaw = false
+                    sh.io.resume()
+                    sh.loop()
                 })
-                
-            },false) }
+        }
+        sh.context.login    = function(){
+            login(sh)
+        }
+}
+
+
     /*
     shell.evil  = function(text){
             var result = shell.accessor.get(shell.context,text)
@@ -60,7 +95,10 @@ var shell           = new repl()
             }
             
         }
-        */
+    */
+    
+    
+    
     
 //  terminal emulator process    
     if(process.stdin.isTTY){
@@ -74,13 +112,13 @@ var shell           = new repl()
     })
 //  set columns and rows
     shell.setSize( process.stdout )  
-//  authenticate 
-    shell.auth()
 //  sigkill
     shell.on('end',     function(){
         process.stdin.setRawMode( false )
         process.exit()
     } ) 
+//  authenticate 
+    login( shell )
 
       
     
