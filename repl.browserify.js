@@ -291,6 +291,16 @@ require=(function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c=
             var defined     = false;
             var isNode      = false;
             var isLeaf      = false;
+            function props(obj) {
+                var p = [];
+                for (; obj != null; obj = Object.getPrototypeOf(obj)) {
+                    var op = Object.getOwnPropertyNames(obj);
+                    for (var i=0; i<op.length; i++)
+                        if (p.indexOf(op[i]) == -1)
+                             p.push(op[i]);
+                }
+                return p;
+            }
             function commonPrefix(candidates, index) {
                 var i, ch, memo
                 do {
@@ -312,7 +322,7 @@ require=(function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c=
             while(siblings.length === 0 && n < nodes.length){
                 n++;
                 path        = nodes.slice(0, n).join('.');
-                nested      = objectPath.get(obj, path,'DEFAULT_VAL');
+                nested      = objectPath.withInheritedProps.get(obj, path,'DEFAULT_VAL');
                 defined     = ( nested === 'DEFAULT_VAL' )? false : true;
                 nested      = nested || obj
                 //step back to parent node branch if subTree is undefined
@@ -320,7 +330,8 @@ require=(function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c=
                 //strings that start the same as current string (node[n])
                 if(typeof nested === 'object'){
                 //adjacency matches
-                    siblings    = Object.getOwnPropertyNames(nested).filter( startsWith )//node[n]
+                    //siblings    = Object.getOwnPropertyNames(nested).filter( startsWith )//node[n]
+                    siblings    = props( nested ).filter( startsWith )
                 }else{
                     siblings    = [];
                 }
@@ -394,6 +405,7 @@ function lineman(){
             if(ldisc.push(chunk)){callback()}
         }
     })
+        ldisc.isRaw = false;
         ldisc.columns   = 80
         ldisc.rows      = 24
         
@@ -409,7 +421,7 @@ function lineman(){
         
         //minimal line discipline
         function keymap( ch, key ){
-            //isRaw?return:null
+            if(ldisc.isRaw===true){return}
             key = key || { name:'', sequence:'' };
             key.name = key.name || ''
             if( key.ctrl && key.shift ) {
@@ -990,21 +1002,21 @@ function emitKey(stream, s) {
   }
 }
 
-}).call(this,{"isBuffer":require("../../../../../../../../usr/lib/node_modules/browserify/node_modules/is-buffer/index.js")})
-},{"../../../../../../../../usr/lib/node_modules/browserify/node_modules/is-buffer/index.js":12,"events":9,"string_decoder":33}],4:[function(require,module,exports){
+}).call(this,{"isBuffer":require("../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/is-buffer/index.js")})
+},{"../../../../../../../../usr/local/lib/node_modules/browserify/node_modules/is-buffer/index.js":12,"events":9,"string_decoder":33}],4:[function(require,module,exports){
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
   typeof define === 'function' && define.amd ? define(factory) :
   (global = global || self, global.ansi = factory());
-}(this, function () { 'use strict';
+}(this, (function () { 'use strict';
 
   /**
    * Takes any input and guarantees an array back.
    *
-   * - converts array-like objects (e.g. `arguments`) to a real array
-   * - converts `undefined` to an empty array
-   * - converts any another other, singular value (including `null`) into an array containing that value
-   * - ignores input which is already an array
+   * - Converts array-like objects (e.g. `arguments`, `Set`) to a real array.
+   * - Converts `undefined` to an empty array.
+   * - Converts any another other, singular value (including `null`, objects and iterables other than `Set`) into an array containing that value.
+   * - Ignores input which is already an array.
    *
    * @module array-back
    * @example
@@ -1022,6 +1034,9 @@ function emitKey(stream, s) {
    * > arrayify([ 1, 2 ])
    * [ 1, 2 ]
    *
+   * > arrayify(new Set([ 1, 2 ]))
+   * [ 1, 2 ]
+   *
    * > function f(){ return arrayify(arguments); }
    * > f(1,2,3)
    * [ 1, 2, 3 ]
@@ -1036,22 +1051,24 @@ function emitKey(stream, s) {
   }
 
   /**
-   * @param {*} - the input value to convert to an array
+   * @param {*} - The input value to convert to an array
    * @returns {Array}
    * @alias module:array-back
    */
   function arrayify (input) {
     if (Array.isArray(input)) {
       return input
-    } else {
-      if (input === undefined) {
-        return []
-      } else if (isArrayLike(input)) {
-        return Array.prototype.slice.call(input)
-      } else {
-        return [ input ]
-      }
     }
+
+    if (input === undefined) {
+      return []
+    }
+
+    if (isArrayLike(input) || input instanceof Set) {
+      return Array.from(input)
+    }
+
+    return [ input ]
   }
 
   /* Control Sequence Initiator */
@@ -1094,6 +1111,13 @@ function emitKey(stream, s) {
     white: '\x1b[37m',
     grey: '\x1b[90m',
     gray: '\x1b[90m',
+    brightRed: '\x1b[91m',
+    brightGreen: '\x1b[92m',
+    brightYellow: '\x1b[93m',
+    brightBlue: '\x1b[94m',
+    brightMagenta: '\x1b[95m',
+    brightCyan: '\x1b[96m',
+    brightWhite: '\x1b[97m',
     'bg-black': '\x1b[40m',
     'bg-red': '\x1b[41m',
     'bg-green': '\x1b[42m',
@@ -1103,85 +1127,105 @@ function emitKey(stream, s) {
     'bg-cyan': '\x1b[46m',
     'bg-white': '\x1b[47m',
     'bg-grey': '\x1b[100m',
-    'bg-gray': '\x1b[100m'
+    'bg-gray': '\x1b[100m',
+    'bg-brightRed': '\x1b[101m',
+    'bg-brightGreen': '\x1b[102m',
+    'bg-brightYellow': '\x1b[103m',
+    'bg-brightBlue': '\x1b[104m',
+    'bg-brightMagenta': '\x1b[105m',
+    'bg-brightCyan': '\x1b[106m',
+    'bg-brightWhite': '\x1b[107m'
   };
 
   /**
-   * style enum - used by `ansi.styles()`.
-   * @enum {number}
-   * @private
+   * Returns a 24-bit "true colour" foreground colour escape sequence.
+   * @param {number} r - Red value.
+   * @param {number} g - Green value.
+   * @param {number} b - Blue value.
+   * @returns {string}
+   * @example
+   * > ansi.rgb(120, 0, 120)
+   * '\u001b[38;2;120;0;120m'
    */
-  const eStyles = {
-    reset: 0,
-    bold: 1,
-    italic: 3,
-    underline: 4,
-    imageNegative: 7,
-    fontDefault: 10,
-    font2: 11,
-    font3: 12,
-    font4: 13,
-    font5: 14,
-    font6: 15,
-    imagePositive: 27,
-    black: 30,
-    red: 31,
-    green: 32,
-    yellow: 33,
-    blue: 34,
-    magenta: 35,
-    cyan: 36,
-    white: 37,
-    grey: 90,
-    gray: 90,
-    'bg-black': 40,
-    'bg-red': 41,
-    'bg-green': 42,
-    'bg-yellow': 43,
-    'bg-blue': 44,
-    'bg-magenta': 45,
-    'bg-cyan': 46,
-    'bg-white': 47,
-    'bg-grey': 100,
-    'bg-gray': 100
+  ansi.rgb = function (r, g, b) {
+    return `\x1b[38;2;${r};${g};${b}m`
   };
 
   /**
-   * Returns an ansi sequence setting one or more effects
-   * @param {string | string[]} - a style, or list or styles
+   * Returns a 24-bit "true colour" background colour escape sequence.
+   * @param {number} r - Red value.
+   * @param {number} g - Green value.
+   * @param {number} b - Blue value.
+   * @returns {string}
+   * @example
+   * > ansi.bgRgb(120, 0, 120)
+   * '\u001b[48;2;120;0;120m'
+   */
+  ansi.bgRgb = function (r, g, b) {
+    return `\x1b[48;2;${r};${g};${b}m`
+  };
+
+  /**
+   * Returns an ansi sequence setting one or more styles.
+   * @param {string | string[]} - One or more style strings.
    * @returns {string}
    * @example
    * > ansi.styles('green')
    * '\u001b[32m'
    *
    * > ansi.styles([ 'green', 'underline' ])
-   * '\u001b[32;4m'
+   * '\u001b[32m\u001b[4m'
+   *
+   * > ansi.styles([ 'bg-red', 'rgb(200,200,200)' ])
+   * '\u001b[41m\u001b[38;2;200;200;200m'
    */
-  ansi.styles = function (effectArray) {
-    effectArray = arrayify(effectArray);
-    return csi + effectArray.map(function (effect) { return eStyles[effect] }).join(';') + 'm'
+  ansi.styles = function (styles) {
+    styles = arrayify(styles);
+    return styles
+      .map(function (effect) {
+        const rgbMatches = effect.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+        const bgRgbMatches = effect.match(/bg-rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+        if (bgRgbMatches) {
+          const [full, r, g, b] = bgRgbMatches;
+          return ansi.bgRgb(r, g, b)
+        } else if (rgbMatches) {
+          const [full, r, g, b] = rgbMatches;
+          return ansi.rgb(r, g, b)
+        } else {
+          return ansi.style[effect]
+        }
+      })
+      .join('')
   };
 
   /**
-   * A convenience function, applying the provided styles to the input string and then resetting.
+   * A convenience function, applying the styles provided in `styleArray` to the input string.
    *
-   * Inline styling can be applied using the syntax `[style-list]{text to format}`, where `style-list` is a space-separated list of styles from {@link module:ansi-escape-sequences.style ansi.style}. For example `[bold white bg-red]{bold white text on a red background}`.
+   * Partial, inline styling can also be applied using the syntax `[style-list]{text to format}` anywhere within the input string, where `style-list` is a space-separated list of styles from {@link module:ansi-escape-sequences.style ansi.style}. For example `[bold white bg-red]{bold white text on a red background}`.
    *
-   * @param {string} - the string to format
-   * @param [styleArray] {string[]} - a list of styles to add to the input string
+   * 24-bit "true colour" values can be set using `rgb(n,n,n)` syntax (no spaces), for example `[rgb(255,128,0) underline]{orange underlined}`. Background 24-bit colours can be set using `bg-rgb(n,n,n)` syntax.
+   *
+   * @param {string} - The string to format. Can also include inline-formatting using the syntax `[style-list]{text to format}` anywhere within the string.
+   * @param [styleArray] {string|string[]} - One or more style strings to apply to the input string. Valid strings are any property from the [`ansi.style`](https://github.com/75lb/ansi-escape-sequences#ansistyle--enum) object (e.g. `red` or `bg-red`), `rgb(n,n,n)` or `bg-rgb(n,n,n)`.
    * @returns {string}
    * @example
    * > ansi.format('what?', 'green')
    * '\u001b[32mwhat?\u001b[0m'
    *
    * > ansi.format('what?', ['green', 'bold'])
-   * '\u001b[32;1mwhat?\u001b[0m'
+   * '\u001b[32m\u001b[1mwhat?\u001b[0m'
    *
-   * > ansi.format('[green bold]{what?}')
-   * '\u001b[32;1mwhat?\u001b[0m'
+   * > ansi.format('something', ['rgb(255,128,0)', 'bold'])
+   * '\u001b[38;2;255;128;0m\u001b[1msomething\u001b[0m'
+   *
+   * > ansi.format('Inline styling: [rgb(255,128,0) bold]{something}')
+   * 'Inline styling: \u001b[38;2;255;128;0m\u001b[1msomething\u001b[0m'
+   *
+   * > ansi.format('Inline styling: [bg-rgb(255,128,0) bold]{something}')
+   * 'Inline styling: \u001b[48;2;255;128;0m\u001b[1msomething\u001b[0m'
    */
   ansi.format = function (str, styleArray) {
-    const re = /\[([\w\s-]+)\]{([^]*?)}/;
+    const re = /\[([\w\s-\(\),]+)\]{([^]*?)}/;
     let matches;
     if (!str) return ''
 
@@ -1289,7 +1333,7 @@ function emitKey(stream, s) {
 
   return ansi;
 
-}));
+})));
 
 },{}],5:[function(require,module,exports){
 'use strict'
@@ -1461,7 +1505,10 @@ function fromByteArray (uint8) {
 
 var base64 = require('base64-js')
 var ieee754 = require('ieee754')
-var customInspectSymbol = typeof Symbol === 'function' ? Symbol.for('nodejs.util.inspect.custom') : null
+var customInspectSymbol =
+  (typeof Symbol === 'function' && typeof Symbol.for === 'function')
+    ? Symbol.for('nodejs.util.inspect.custom')
+    : null
 
 exports.Buffer = Buffer
 exports.SlowBuffer = SlowBuffer
@@ -2516,7 +2563,7 @@ function hexSlice (buf, start, end) {
 
   var out = ''
   for (var i = start; i < end; ++i) {
-    out += toHex(buf[i])
+    out += hexSliceLookupTable[buf[i]]
   }
   return out
 }
@@ -3043,6 +3090,8 @@ Buffer.prototype.fill = function fill (val, start, end, encoding) {
     }
   } else if (typeof val === 'number') {
     val = val & 255
+  } else if (typeof val === 'boolean') {
+    val = Number(val)
   }
 
   // Invalid ranges are not set to a default, so can range check early.
@@ -3098,11 +3147,6 @@ function base64clean (str) {
     str = str + '='
   }
   return str
-}
-
-function toHex (n) {
-  if (n < 16) return '0' + n.toString(16)
-  return n.toString(16)
 }
 
 function utf8ToBytes (string, units) {
@@ -3234,6 +3278,20 @@ function numberIsNaN (obj) {
   // For IE11 support
   return obj !== obj // eslint-disable-line no-self-compare
 }
+
+// Create lookup table for `toString('hex')`
+// See: https://github.com/feross/buffer/issues/219
+var hexSliceLookupTable = (function () {
+  var alphabet = '0123456789abcdef'
+  var table = new Array(256)
+  for (var i = 0; i < 16; ++i) {
+    var i16 = i * 16
+    for (var j = 0; j < 16; ++j) {
+      table[i16 + j] = alphabet[i] + alphabet[j]
+    }
+  }
+  return table
+})()
 
 }).call(this,require("buffer").Buffer)
 },{"base64-js":5,"buffer":7,"ieee754":10}],8:[function(require,module,exports){
@@ -4301,7 +4359,7 @@ var objectKeys = Object.keys || function (obj) {
 module.exports = Duplex;
 
 /*<replacement>*/
-var util = require('core-util-is');
+var util = Object.create(require('core-util-is'));
 util.inherits = require('inherits');
 /*</replacement>*/
 
@@ -4420,7 +4478,7 @@ module.exports = PassThrough;
 var Transform = require('./_stream_transform');
 
 /*<replacement>*/
-var util = require('core-util-is');
+var util = Object.create(require('core-util-is'));
 util.inherits = require('inherits');
 /*</replacement>*/
 
@@ -4503,7 +4561,7 @@ function _isUint8Array(obj) {
 /*</replacement>*/
 
 /*<replacement>*/
-var util = require('core-util-is');
+var util = Object.create(require('core-util-is'));
 util.inherits = require('inherits');
 /*</replacement>*/
 
@@ -5528,7 +5586,7 @@ module.exports = Transform;
 var Duplex = require('./_stream_duplex');
 
 /*<replacement>*/
-var util = require('core-util-is');
+var util = Object.create(require('core-util-is'));
 util.inherits = require('inherits');
 /*</replacement>*/
 
@@ -5740,7 +5798,7 @@ var Duplex;
 Writable.WritableState = WritableState;
 
 /*<replacement>*/
-var util = require('core-util-is');
+var util = Object.create(require('core-util-is'));
 util.inherits = require('inherits');
 /*</replacement>*/
 
@@ -7871,9 +7929,7 @@ function hasOwnProperty(obj, prop) {
 },{"./support/isBuffer":37,"_process":15,"inherits":36}],"repl":[function(require,module,exports){
 //  dependencies
 var ansi    = require('ansi-escape-sequences');
-var inspect = require('util').inspect;
 var lineman = require('@primeeuler/lineman');
-
 
 function repl(){
     var ldisc           = new lineman()
@@ -7887,8 +7943,12 @@ function repl(){
         ldisc.request   = false;
         ldisc.context   = {}
         ldisc.accessor  = require('./object-path');
+        ldisc.inspect   = require('util').inspect;
+        ldisc.io.cleanup = []
+        ldisc.io.on('newListener',function(event,listener){
+            //ldisc.io.cleanup.push([event,listener])
+        })
         
-    
         ldisc.READ  = function(text){
             ldisc.io.write(ldisc.echo(text))
         }
@@ -7901,13 +7961,18 @@ function repl(){
             try{ result = evalInScope( text, ldisc.context ) }catch( e ){ result = e }
             if( typeof result === "undefined" ){
                 ldisc.loop()
-            }else{
+            }else if(result == null){
+                ldisc.io.write('\n')
+                ldisc.loop()
+            }
+            
+            else{
                 ldisc.print( result ) 
             }
             
         }
         ldisc.print = function(object){
-            ldisc.io.write('\r\n' + inspect(object,false,10,true) + '\r\n')
+            ldisc.io.write('\r\n' + ldisc.inspect(object,false,10,true) + '\r\n')
         }
         ldisc.loop  = function(){
             ldisc.io.write( ldisc.echo( ldisc.getText() ) )
@@ -7939,11 +8004,11 @@ function repl(){
         //  ansi echo
             return  ansi.erase.inLine(2) + 
                     ansi.cursor.horizontalAbsolute(1) + 
-                    ansi.style.green +
+                    ansi.rgb(255,128,0) +
                     ldisc.user + 
                     ansi.style.cyan +
                     ldisc.at + 
-                    ansi.style.green +
+                    ansi.rgb(255,128,0) +
                     ldisc.home +
                     ansi.style.magenta +
                     ldisc.prompt + 
@@ -8116,7 +8181,7 @@ function repl(){
                 ldisc.respond( text.buffer )
             }else{
                 if(!text.buffer){
-                    ldisc.io.write('\n\r')
+                    ldisc.io.write('\n\r')//os.EOL
                     return
                 }
                 ldisc.evil( text.buffer )

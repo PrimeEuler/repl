@@ -1,9 +1,6 @@
 //  dependencies
 var ansi    = require('ansi-escape-sequences');
-var inspect = require('util').inspect;
 var lineman = require('@primeeuler/lineman');
-
-
 
 function repl(){
     var ldisc           = new lineman()
@@ -17,11 +14,12 @@ function repl(){
         ldisc.request   = false;
         ldisc.context   = {}
         ldisc.accessor  = require('./object-path');
+        ldisc.inspect   = require('util').inspect;
         ldisc.io.cleanup = []
         ldisc.io.on('newListener',function(event,listener){
             //ldisc.io.cleanup.push([event,listener])
         })
-    
+        
         ldisc.READ  = function(text){
             ldisc.io.write(ldisc.echo(text))
         }
@@ -45,7 +43,7 @@ function repl(){
             
         }
         ldisc.print = function(object){
-            ldisc.io.write('\r\n' + inspect(object,false,10,true) + '\r\n')
+            ldisc.io.write('\r\n' + ldisc.inspect(object,false,10,true) + '\r\n')
         }
         ldisc.loop  = function(){
             ldisc.io.write( ldisc.echo( ldisc.getText() ) )
