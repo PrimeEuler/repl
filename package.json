@@ -4,7 +4,7 @@
   "author": "Jeremy Ebert",
   "version": "0.0.8",
   "dependencies": { 
-      "@primeeuler/lineman": "^0.0.2",
+      "@primeeuler/lineman": "^0.0.3",
       "ansi-escape-sequences":"^5.0.0"
       
   },

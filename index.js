@@ -50,29 +50,40 @@ function repl(){
         }
         ldisc.echo  = function(text){
         //  horizontal scrolling
-            var min     = ldisc.user.length 
+            var prompt  = ldisc.user.length 
                         + ldisc.at.length 
                         + ldisc.home.length 
                         + ldisc.prompt.length
-            var max     = ldisc.columns
-            var range   = max-min
-            var total   = min + text.buffer.length
-            var over    = total - max
-            var r_dent  = text.buffer.length - text.index 
-            var l_dent  = over  
-            var cursor  = min + text.index + 1
+            var columns = ldisc.columns
+            var range   = columns - prompt
+            var end     = prompt + text.buffer.length
+            var scroll  = end - columns
+            var tail    = text.buffer.length - text.index 
+            var head    = scroll  
+            var cursor  = prompt + text.index + 1
             var line    = text.buffer
-                if(over > 0){ 
-                    cursor = (max - r_dent) + 1
-                    if( r_dent > range ){
-                        l_dent = over - (r_dent - range);
-                        cursor = min + 1
+                if(scroll > 0){ 
+                    cursor = (columns - tail) + 1
+                    if( tail > range ){
+                        head = scroll - (tail - range);
+                        cursor = prompt + 1
                     }
-                    line = text.buffer.slice( l_dent, l_dent+range) ;
+                    line = text.buffer.slice( head, head+range) ;
                 }
         // TODO: multi-line support    
             
         //  ansi echo
+        // prompt phrase = ldisc.user + ldisc.at + ldisc.home + ldisc.prompt
+        // line phrase  = prompt phrase + line
+        //lexer/parser
+        var phrase = {
+            user:   { type: 'identifier',   value:ldisc.user,   color: [255,128,0]    },
+            at:     { type: 'at',           value:ldisc.at,     color: 'cyan'         },
+            home:   { type: 'identifier',   value:ldisc.home,   color: [255,128,0]    },
+            prompt: { type: 'prompt',       value:ldisc.prompt, color: 'magenta'      },
+            line:   { type: 'string',       value:line,         color: 'cyan'         }
+            
+        }
             return  ansi.erase.inLine(2) + 
                     ansi.cursor.horizontalAbsolute(1) + 
                     ansi.rgb(255,128,0) +
